@@ -153,7 +153,6 @@ def _instrumented_client_server_pair(channel_kwargs, server_handler):
                 server.stop(None)
 
 
-# TODO(rbellevi): Enable other arities in this function.
 def _get_byte_counts(channel_kwargs, multicallable_kwargs, client_function,
                      server_handler, message):
     with _instrumented_client_server_pair(channel_kwargs,
@@ -203,6 +202,16 @@ def _stream_unary_client(channel, multicallable_kwargs, message):
     if response != message:
         raise RuntimeError("Request '{}' != Response '{}'".format(
             message, response))
+
+
+def _stream_stream_client(channel, multicallable_kwargs, message):
+    multi_callable = channel.stream_stream(_STREAM_STREAM)
+    requests = (_REQUEST for _ in range(test_constants.STREAM_LENGTH))
+    response_iterator = multi_callable(requests, **multicallable_kwargs)
+    for response in response_iterator:
+        if response != message:
+            raise RuntimeError("Request '{}' != Response '{}'".format(
+                message, response))
 
 
 class CompressionTest(unittest.TestCase):
@@ -288,6 +297,21 @@ class CompressionTest(unittest.TestCase):
         }
         bytes_sent_difference, bytes_received_difference = _get_byte_differences(
             _stream_unary_client, uncompressed_channel_kwargs, {},
+            _GenericHandler(None), uncompressed_channel_kwargs,
+            compressed_multicallable_kwargs,
+            _GenericHandler(set_call_compression), _REQUEST)
+        print("Bytes sent difference: {}".format(bytes_sent_difference))
+        print("Bytes received difference: {}".format(bytes_received_difference))
+        self.assertCompressed(bytes_sent_difference)
+        self.assertCompressed(bytes_received_difference)
+
+    def testCallCompressedStreamStream(self):
+        uncompressed_channel_kwargs = {}
+        compressed_multicallable_kwargs = {
+            'compression': grpc.compression.Deflate,
+        }
+        bytes_sent_difference, bytes_received_difference = _get_byte_differences(
+            _stream_stream_client, uncompressed_channel_kwargs, {},
             _GenericHandler(None), uncompressed_channel_kwargs,
             compressed_multicallable_kwargs,
             _GenericHandler(set_call_compression), _REQUEST)
