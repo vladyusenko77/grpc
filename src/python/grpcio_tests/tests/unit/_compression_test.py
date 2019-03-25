@@ -48,8 +48,6 @@ def make_handle_unary_stream(pre_response_callback):
 
     def _handle_unary_stream(request, servicer_context):
         if pre_response_callback:
-            print("Calling pre-response callback {} in unary_stream".format(
-                pre_response_callback))
             pre_response_callback(request, servicer_context)
         for _ in range(test_constants.STREAM_LENGTH):
             yield request
@@ -270,6 +268,8 @@ class CompressionTest(unittest.TestCase):
     # TODO(rbellevi): Implement.
     def testDisableNextCompressionStreaming(self):
         pass
+
+    # TODO(rbellevi): Reevaluate these old tests.
 
     # def testUnary(self):
     #     request = b'\x00' * 100

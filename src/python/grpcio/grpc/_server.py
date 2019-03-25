@@ -405,7 +405,6 @@ def _unary_request(rpc_event, state, request_deserializer):
 def _maybe_request_compression(state, rpc_event):
     with state.condition:
         if state.initial_metadata_allowed and state.compression_algorithm:
-            print("Adding compression metadata")
             compression_metadata = (
                 grpc.compression._compression_algorithm_to_metadata(
                     state.compression_algorithm),)
@@ -423,7 +422,6 @@ def _call_behavior(rpc_event,
                    argument,
                    request_deserializer,
                    send_response_callback=None):
-    print("Enter call_behavior!")
     from grpc import _create_servicer_context
     with _create_servicer_context(rpc_event, state,
                                   request_deserializer) as context:
@@ -434,8 +432,6 @@ def _call_behavior(rpc_event,
                                                 send_response_callback)
             else:
                 response_or_iterator = behavior(argument, context)
-            print("Maybe request compression")
-            _maybe_request_compression(state, rpc_event)
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
@@ -547,6 +543,7 @@ def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
         if argument is not None:
             response, proceed = _call_behavior(rpc_event, state, behavior,
                                                argument, request_deserializer)
+            _maybe_request_compression(state, rpc_event)
             if proceed:
                 serialized_response = _serialize_response(
                     rpc_event, state, response, response_serializer)
@@ -600,6 +597,7 @@ def _send_message_callback_to_blocking_iterator_adapter(
     while True:
         response, proceed = _take_response_from_response_iterator(
             rpc_event, state, response_iterator)
+        _maybe_request_compression(state, rpc_event)
         if proceed:
             send_response_callback(response)
             if not _is_rpc_state_active(state):
