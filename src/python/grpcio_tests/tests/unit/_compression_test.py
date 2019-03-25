@@ -31,6 +31,7 @@ from tests.unit import _tcp_proxy
 
 _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'
+_STREAM_UNARY = '/test/StreamUnary'
 _STREAM_STREAM = '/test/StreamStream'
 
 
@@ -53,6 +54,20 @@ def make_handle_unary_stream(pre_response_callback):
             yield request
 
     return _handle_unary_stream
+
+
+def make_handle_stream_unary(pre_response_callback):
+
+    def _handle_stream_unary(request_iterator, servicer_context):
+        if pre_response_callback:
+            pre_response_callback(request_iterator, servicer_context)
+        response = None
+        for request in request_iterator:
+            if not response:
+                response = request
+        return response
+
+    return _handle_stream_unary
 
 
 def make_handle_stream_stream(pre_response_callback):
@@ -98,6 +113,9 @@ class _MethodHandler(grpc.RpcMethodHandler):
             self.unary_unary = make_handle_unary_unary(pre_response_callback)
         elif not self.request_streaming and self.response_streaming:
             self.unary_stream = make_handle_unary_stream(pre_response_callback)
+        else:
+            self.stream_unary = make_handle_stream_unary(pre_response_callback)
+
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -108,8 +126,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
     def service(self, handler_call_details):
         if handler_call_details.method == _UNARY_UNARY:
             return _MethodHandler(False, False, self._pre_response_callback)
-        if handler_call_details.method == _UNARY_STREAM:
+        elif handler_call_details.method == _UNARY_STREAM:
             return _MethodHandler(False, True, self._pre_response_callback)
+        elif handler_call_details.method == _STREAM_UNARY:
+            return _MethodHandler(True, False, self._pre_response_callback)
         elif handler_call_details.method == _STREAM_STREAM:
             return _MethodHandler(True, True, self._pre_response_callback)
         else:
@@ -176,6 +196,15 @@ def _unary_stream_client(channel, multicallable_kwargs, message):
                 message, response))
 
 
+def _stream_unary_client(channel, multicallable_kwargs, message):
+    multi_callable = channel.stream_unary(_STREAM_UNARY)
+    requests = (_REQUEST for _ in range(test_constants.STREAM_LENGTH))
+    response = multi_callable(requests, **multicallable_kwargs)
+    if response != message:
+        raise RuntimeError("Request '{}' != Response '{}'".format(
+            message, response))
+
+
 class CompressionTest(unittest.TestCase):
 
     def setUp(self):
@@ -221,6 +250,7 @@ class CompressionTest(unittest.TestCase):
     def testChannelCompressedStreaming(self):
         pass
 
+    # TODO(rbellevi): Abstract this repetition away.
     def testCallCompressedUnaryUnary(self):
         uncompressed_channel_kwargs = {}
         compressed_multicallable_kwargs = {
@@ -243,6 +273,21 @@ class CompressionTest(unittest.TestCase):
         }
         bytes_sent_difference, bytes_received_difference = _get_byte_differences(
             _unary_stream_client, uncompressed_channel_kwargs, {},
+            _GenericHandler(None), uncompressed_channel_kwargs,
+            compressed_multicallable_kwargs,
+            _GenericHandler(set_call_compression), _REQUEST)
+        print("Bytes sent difference: {}".format(bytes_sent_difference))
+        print("Bytes received difference: {}".format(bytes_received_difference))
+        self.assertCompressed(bytes_sent_difference)
+        self.assertCompressed(bytes_received_difference)
+
+    def testCallCompressedStreamUnary(self):
+        uncompressed_channel_kwargs = {}
+        compressed_multicallable_kwargs = {
+            'compression': grpc.compression.Deflate,
+        }
+        bytes_sent_difference, bytes_received_difference = _get_byte_differences(
+            _stream_unary_client, uncompressed_channel_kwargs, {},
             _GenericHandler(None), uncompressed_channel_kwargs,
             compressed_multicallable_kwargs,
             _GenericHandler(set_call_compression), _REQUEST)

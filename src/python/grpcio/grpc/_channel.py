@@ -673,7 +673,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             None, deadline_to_propagate, augmented_metadata, None
             if credentials is None else credentials._credentials,
             _stream_unary_invocation_operationses_and_tags(
-                metadata, initial_metadata_flags), self._context)
+                augmented_metadata, initial_metadata_flags), self._context)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, None)
         while True:
@@ -769,7 +769,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         deadline_to_propagate = _determine_deadline(deadline)
         call = self._managed_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
-            None, deadline_to_propagate, metadata, None
+            None, deadline_to_propagate, augmented_metadata, None
             if credentials is None else credentials._credentials, operationses,
             event_handler, self._context)
         _consume_request_iterator(request_iterator, state, call,

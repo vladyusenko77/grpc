@@ -49,5 +49,4 @@ __all__ = (
     "NoCompression",
     "Deflate",
     "Gzip",
-    "StreamGzip",
 )
