@@ -117,7 +117,6 @@ class _MethodHandler(grpc.RpcMethodHandler):
             self.stream_unary = make_handle_stream_unary(pre_response_callback)
 
 
-
 class _GenericHandler(grpc.GenericRpcHandler):
 
     def __init__(self, pre_response_callback):
@@ -241,145 +240,110 @@ class CompressionTest(unittest.TestCase):
             msg='Second stream was {} bytes smaller than first stream.'.format(
                 -1 * bytes_difference))
 
-    def testChannelCompressedUnaryUnary(self):
-        uncompressed_channel_kwargs = {}
-        compressed_channel_kwargs = {
+    # TODO(rbellevi): Better name.
+    def assertIsCompressed(self, client_streaming, server_streaming,
+                           channel_compressed, multicallable_compressed,
+                           server_compressed, server_call_compressed):
+        client_side_compressed = channel_compressed or multicallable_compressed
+        server_side_compressed = server_compressed or server_call_compressed
+        channel_kwargs = {
             'compression': grpc.compression.Deflate,
-        }
+        } if channel_compressed else {}
+        multicallable_kwargs = {
+            'compression': grpc.compression.Deflate,
+        } if multicallable_compressed else {}
+
+        client_function = None
+        if not client_streaming and not server_streaming:
+            client_function = _unary_unary_client
+        elif not client_streaming and server_streaming:
+            client_function = _unary_stream_client
+        elif client_streaming and not server_streaming:
+            client_function = _stream_unary_client
+        else:
+            client_function = _stream_stream_client
+
+        # TODO(rbellevi): Take server_compressed into account.
+        server_handler = _GenericHandler(
+            set_call_compression
+        ) if server_call_compressed else _GenericHandler(None)
         bytes_sent_difference, bytes_received_difference = _get_byte_differences(
-            _unary_unary_client, uncompressed_channel_kwargs, {},
-            _GenericHandler(None), compressed_channel_kwargs, {},
-            _GenericHandler(set_call_compression), _REQUEST)
+            client_function, {}, {}, _GenericHandler(None), channel_kwargs,
+            multicallable_kwargs, server_handler, _REQUEST)
+
         print("Bytes sent difference: {}".format(bytes_sent_difference))
         print("Bytes received difference: {}".format(bytes_received_difference))
-        self.assertCompressed(bytes_sent_difference)
-        self.assertCompressed(bytes_received_difference)
+        if client_side_compressed:
+            self.assertCompressed(bytes_sent_difference)
+        else:
+            self.assertNotCompressed(bytes_sent_difference)
 
-    # TODO(rbellevi): Implement.
-    def testChannelCompressedStreaming(self):
-        pass
-
-    # TODO(rbellevi): Abstract this repetition away.
-    def testCallCompressedUnaryUnary(self):
-        uncompressed_channel_kwargs = {}
-        compressed_multicallable_kwargs = {
-            'compression': grpc.compression.Deflate,
-        }
-        bytes_sent_difference, bytes_received_difference = _get_byte_differences(
-            _unary_unary_client, uncompressed_channel_kwargs, {},
-            _GenericHandler(None), uncompressed_channel_kwargs,
-            compressed_multicallable_kwargs,
-            _GenericHandler(set_call_compression), _REQUEST)
-        print("Bytes sent difference: {}".format(bytes_sent_difference))
-        print("Bytes received difference: {}".format(bytes_received_difference))
-        self.assertCompressed(bytes_sent_difference)
-        self.assertCompressed(bytes_received_difference)
-
-    def testCallCompressedUnaryStream(self):
-        uncompressed_channel_kwargs = {}
-        compressed_multicallable_kwargs = {
-            'compression': grpc.compression.Deflate,
-        }
-        bytes_sent_difference, bytes_received_difference = _get_byte_differences(
-            _unary_stream_client, uncompressed_channel_kwargs, {},
-            _GenericHandler(None), uncompressed_channel_kwargs,
-            compressed_multicallable_kwargs,
-            _GenericHandler(set_call_compression), _REQUEST)
-        print("Bytes sent difference: {}".format(bytes_sent_difference))
-        print("Bytes received difference: {}".format(bytes_received_difference))
-        self.assertCompressed(bytes_sent_difference)
-        self.assertCompressed(bytes_received_difference)
-
-    def testCallCompressedStreamUnary(self):
-        uncompressed_channel_kwargs = {}
-        compressed_multicallable_kwargs = {
-            'compression': grpc.compression.Deflate,
-        }
-        bytes_sent_difference, bytes_received_difference = _get_byte_differences(
-            _stream_unary_client, uncompressed_channel_kwargs, {},
-            _GenericHandler(None), uncompressed_channel_kwargs,
-            compressed_multicallable_kwargs,
-            _GenericHandler(set_call_compression), _REQUEST)
-        print("Bytes sent difference: {}".format(bytes_sent_difference))
-        print("Bytes received difference: {}".format(bytes_received_difference))
-        self.assertCompressed(bytes_sent_difference)
-        self.assertCompressed(bytes_received_difference)
-
-    def testCallCompressedStreamStream(self):
-        uncompressed_channel_kwargs = {}
-        compressed_multicallable_kwargs = {
-            'compression': grpc.compression.Deflate,
-        }
-        bytes_sent_difference, bytes_received_difference = _get_byte_differences(
-            _stream_stream_client, uncompressed_channel_kwargs, {},
-            _GenericHandler(None), uncompressed_channel_kwargs,
-            compressed_multicallable_kwargs,
-            _GenericHandler(set_call_compression), _REQUEST)
-        print("Bytes sent difference: {}".format(bytes_sent_difference))
-        print("Bytes received difference: {}".format(bytes_received_difference))
-        self.assertCompressed(bytes_sent_difference)
-        self.assertCompressed(bytes_received_difference)
-
-    def testDisableNextCompressionUnaryUnary(self):
-        uncompressed_channel_kwargs = {}
-        compressed_channel_kwargs = {
-            'compression': grpc.compression.Deflate,
-        }
-        bytes_sent_difference, bytes_received_difference = _get_byte_differences(
-            _unary_unary_client, uncompressed_channel_kwargs, {},
-            _GenericHandler(None), compressed_channel_kwargs, {},
-            _GenericHandler(disable_next_compression), _REQUEST)
-        print("Bytes sent difference: {}".format(bytes_sent_difference))
-        print("Bytes received difference: {}".format(bytes_received_difference))
-        self.assertCompressed(bytes_sent_difference)
-        self.assertNotCompressed(bytes_received_difference)
+        if server_side_compressed:
+            self.assertCompressed(bytes_received_difference)
+        else:
+            self.assertNotCompressed(bytes_received_difference)
 
     # TODO(rbellevi): Implement.
     def testDisableNextCompressionStreaming(self):
         pass
 
-    # TODO(rbellevi): Reevaluate these old tests.
 
-    # def testUnary(self):
-    #     request = b'\x00' * 100
+def _get_compression_str(name, value):
+    if value:
+        return '{}Compressed'.format(name)
+    else:
+        return '{}Uncompressed'.format(name)
 
-    #     # Client -> server compressed through default client channel compression
-    #     # settings. Server -> client compressed via server-side metadata setting.
-    #     # TODO(https://github.com/grpc/grpc/issues/4078): replace the "1" integer
-    #     # literal with proper use of the public API.
-    #     compressed_channel = grpc.insecure_channel(
-    #         'localhost:%d' % self._port,
-    #         options=[('grpc.default_compression_algorithm', 1)])
-    #     multi_callable = compressed_channel.unary_unary(_UNARY_UNARY)
-    #     response = multi_callable(request)
-    #     self.assertEqual(request, response)
 
-    #     # Client -> server compressed through client metadata setting. Server ->
-    #     # client compressed via server-side metadata setting.
-    #     # TODO(https://github.com/grpc/grpc/issues/4078): replace the "0" integer
-    #     # literal with proper use of the public API.
-    #     uncompressed_channel = grpc.insecure_channel(
-    #         'localhost:%d' % self._port,
-    #         options=[('grpc.default_compression_algorithm', 0)])
-    #     multi_callable = compressed_channel.unary_unary(_UNARY_UNARY)
-    #     response = multi_callable(
-    #         request, metadata=[('grpc-internal-encoding-request', 'gzip')])
-    #     self.assertEqual(request, response)
-    #     compressed_channel.close()
+def _get_compression_test_name(client_streaming, server_streaming,
+                               channel_compressed, multicallable_compressed,
+                               server_call_compressed):
+    client_arity = 'Unary' if client_streaming else 'Stream'
+    server_arity = 'Unary' if server_streaming else 'Stream'
+    arity = '{}{}'.format(client_arity, server_arity)
+    channel_compression_str = _get_compression_str('Channel',
+                                                   channel_compressed)
+    multicallable_compression_str = _get_compression_str(
+        'Multicallable', multicallable_compressed)
+    server_call_compressed = _get_compression_str('ServerCall',
+                                                  server_call_compressed)
+    return 'test{}{}{}{}'.format(arity, channel_compression_str,
+                                 multicallable_compression_str,
+                                 server_call_compressed)
 
-    # def testStreaming(self):
-    #     request = b'\x00' * 100
 
-    #     # TODO(https://github.com/grpc/grpc/issues/4078): replace the "1" integer
-    #     # literal with proper use of the public API.
-    #     compressed_channel = grpc.insecure_channel(
-    #         'localhost:%d' % self._port,
-    #         options=[('grpc.default_compression_algorithm', 1)])
-    #     multi_callable = compressed_channel.stream_stream(_STREAM_STREAM)
-    #     call = multi_callable(iter([request] * test_constants.STREAM_LENGTH))
-    #     for response in call:
-    #         self.assertEqual(request, response)
-    #     compressed_channel.close()
+for client_streaming in (True, False):
+    for server_streaming in (True, False):
+        for channel_compressed in (True, False):
+            for multicallable_compressed in (True, False):
+                # TODO(rbellevi): Server compressed?
+                for server_call_compressed in (True, False):
+
+                    def test_compression(client_streaming, server_streaming,
+                                         channel_compressed,
+                                         multicallable_compressed,
+                                         server_call_compressed):
+
+                        def _test_compression(self):
+                            self.assertIsCompressed(
+                                client_streaming=client_streaming,
+                                server_streaming=server_streaming,
+                                channel_compressed=channel_compressed,
+                                multicallable_compressed=
+                                multicallable_compressed,
+                                server_compressed=False,
+                                server_call_compressed=server_call_compressed)
+
+                        return _test_compression
+
+                    test_name = _get_compression_test_name(
+                        client_streaming, server_streaming, channel_compressed,
+                        multicallable_compressed, server_call_compressed)
+                    setattr(CompressionTest, test_name,
+                            test_compression(client_streaming, server_streaming,
+                                             channel_compressed,
+                                             multicallable_compressed,
+                                             server_call_compressed))
 
 
 if __name__ == '__main__':
