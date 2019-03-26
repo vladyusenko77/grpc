@@ -38,7 +38,6 @@ class AllTest(unittest.TestCase):
             'Call',
             'ChannelCredentials',
             'CallCredentials',
-            'CompressionAlgorithm',
             'AuthMetadataContext',
             'AuthMetadataPluginCallback',
             'AuthMetadataPlugin',
@@ -71,6 +70,7 @@ class AllTest(unittest.TestCase):
             'access_token_call_credentials',
             'composite_call_credentials',
             'composite_channel_credentials',
+            'compression,'
             'ssl_server_credentials',
             'ssl_server_certificate_configuration',
             'dynamic_ssl_server_credentials',

@@ -1102,8 +1102,8 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         """Set the compression algorithm to be used for the entire of the call.
 
         Args:
-          compression: An element of grpc.CompressionAlgorithm, e.g.
-            grpc.CompressionAlgorithm.gzip.
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip.
         """
         raise NotImplementedError()
 
@@ -1821,7 +1821,6 @@ __all__ = (
     'AuthMetadataPluginCallback',
     'AuthMetadataPlugin',
     'ClientCallDetails',
-    'CompressionAlgorithm',
     'ServerCertificateConfiguration',
     'ServerCredentials',
     'UnaryUnaryMultiCallable',
