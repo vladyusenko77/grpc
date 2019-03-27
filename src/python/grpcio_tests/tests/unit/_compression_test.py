@@ -21,6 +21,8 @@ import unittest
 
 import contextlib
 import logging
+import os
+
 import grpc
 import grpc.compression
 from grpc import _grpcio_metadata
@@ -28,6 +30,8 @@ from grpc import _grpcio_metadata
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 from tests.unit import _tcp_proxy
+
+os.environ['GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL'] = 'true'
 
 _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'
@@ -161,17 +165,19 @@ def _get_byte_counts(channel_kwargs, multicallable_kwargs, client_function,
         return proxy.get_byte_count()
 
 
-def _get_byte_differences(client_function, first_channel_kwargs,
-                          first_multicallable_kwargs, first_server_handler,
-                          second_channel_kwargs, second_multicallable_kwargs,
-                          second_server_handler, message):
+def _get_compression_ratios(client_function, first_channel_kwargs,
+                            first_multicallable_kwargs, first_server_handler,
+                            second_channel_kwargs, second_multicallable_kwargs,
+                            second_server_handler, message):
     first_bytes_sent, first_bytes_received = _get_byte_counts(
         first_channel_kwargs, first_multicallable_kwargs, client_function,
         first_server_handler, message)
     second_bytes_sent, second_bytes_received = _get_byte_counts(
         second_channel_kwargs, second_multicallable_kwargs, client_function,
         second_server_handler, message)
-    return second_bytes_sent - first_bytes_sent, second_bytes_received - first_bytes_received
+    return ((second_bytes_sent - first_bytes_sent) / float(first_bytes_sent),
+            (second_bytes_received - first_bytes_received) /
+            float(first_bytes_received))
 
 
 _REQUEST = b'\x00' * 100
@@ -213,37 +219,27 @@ def _stream_stream_client(channel, multicallable_kwargs, message):
                 message, response))
 
 
+_COMPRESSION_RATIO_THRESHOLD = 0.1
+
+
 class CompressionTest(unittest.TestCase):
 
-    def setUp(self):
-        pass
-        # self._server = test_common.test_server()
-        # self._server.add_generic_rpc_handlers((_GenericHandler(None),))
-        # self._port = self._server.add_insecure_port('[::]:0')
-        # self._server.start()
-
-    def tearDown(self):
-        pass
-        # self._server.stop(None)
-
-    def assertCompressed(self, bytes_difference):
+    def assertCompressed(self, compression_ratio):
         self.assertLess(
-            bytes_difference,
-            0,
-            msg='Second stream was {} bytes bigger than first stream.'.format(
-                bytes_difference))
+            compression_ratio,
+            -1.0 * _COMPRESSION_RATIO_THRESHOLD,
+            msg='Actual compression ratio: {}'.format(compression_ratio))
 
-    def assertNotCompressed(self, bytes_difference):
+    def assertNotCompressed(self, compression_ratio):
         self.assertGreaterEqual(
-            bytes_difference,
-            0,
-            msg='Second stream was {} bytes smaller than first stream.'.format(
-                -1 * bytes_difference))
+            compression_ratio,
+            -1.0 * _COMPRESSION_RATIO_THRESHOLD,
+            msg='Actual compession ratio: {}'.format(compression_ratio))
 
-    # TODO(rbellevi): Better name.
-    def assertIsCompressed(self, client_streaming, server_streaming,
-                           channel_compressed, multicallable_compressed,
-                           server_compressed, server_call_compressed):
+    def assertConfigurationCompressed(
+            self, client_streaming, server_streaming, channel_compressed,
+            multicallable_compressed, server_compressed,
+            server_call_compressed):
         client_side_compressed = channel_compressed or multicallable_compressed
         server_side_compressed = server_compressed or server_call_compressed
         channel_kwargs = {
@@ -267,21 +263,21 @@ class CompressionTest(unittest.TestCase):
         server_handler = _GenericHandler(
             set_call_compression
         ) if server_call_compressed else _GenericHandler(None)
-        bytes_sent_difference, bytes_received_difference = _get_byte_differences(
+        sent_ratio, received_ratio = _get_compression_ratios(
             client_function, {}, {}, _GenericHandler(None), channel_kwargs,
             multicallable_kwargs, server_handler, _REQUEST)
 
-        print("Bytes sent difference: {}".format(bytes_sent_difference))
-        print("Bytes received difference: {}".format(bytes_received_difference))
+        print("Sent ratio: {}".format(sent_ratio))
+        print("Received ratio: {}".format(received_ratio))
         if client_side_compressed:
-            self.assertCompressed(bytes_sent_difference)
+            self.assertCompressed(sent_ratio)
         else:
-            self.assertNotCompressed(bytes_sent_difference)
+            self.assertNotCompressed(sent_ratio)
 
         if server_side_compressed:
-            self.assertCompressed(bytes_received_difference)
+            self.assertCompressed(received_ratio)
         else:
-            self.assertNotCompressed(bytes_received_difference)
+            self.assertNotCompressed(received_ratio)
 
     # TODO(rbellevi): Implement.
     def testDisableNextCompressionStreaming(self):
@@ -298,8 +294,8 @@ def _get_compression_str(name, value):
 def _get_compression_test_name(client_streaming, server_streaming,
                                channel_compressed, multicallable_compressed,
                                server_call_compressed):
-    client_arity = 'Unary' if client_streaming else 'Stream'
-    server_arity = 'Unary' if server_streaming else 'Stream'
+    client_arity = 'Stream' if client_streaming else 'Unary'
+    server_arity = 'Stream' if server_streaming else 'Unary'
     arity = '{}{}'.format(client_arity, server_arity)
     channel_compression_str = _get_compression_str('Channel',
                                                    channel_compressed)
@@ -325,7 +321,7 @@ for client_streaming in (True, False):
                                          server_call_compressed):
 
                         def _test_compression(self):
-                            self.assertIsCompressed(
+                            self.assertConfigurationCompressed(
                                 client_streaming=client_streaming,
                                 server_streaming=server_streaming,
                                 channel_compressed=channel_compressed,
@@ -344,7 +340,6 @@ for client_streaming in (True, False):
                                              channel_compressed,
                                              multicallable_compressed,
                                              server_call_compressed))
-
 
 if __name__ == '__main__':
     logging.basicConfig()

@@ -19,6 +19,7 @@ import threading
 import time
 
 import grpc
+import grpc.compression
 from grpc import _common
 from grpc import _grpcio_metadata
 from grpc._cython import cygrpc

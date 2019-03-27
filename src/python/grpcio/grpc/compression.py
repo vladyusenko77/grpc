@@ -39,7 +39,7 @@ def _compression_algorithm_to_metadata(compression):
 def _augment_metadata(metadata, compression):
     if not metadata and not compression:
         return None
-    base_metadata = metadata if metadata else ()
+    base_metadata = tuple(metadata) if metadata else ()
     compression_metadata = (
         _compression_algorithm_to_metadata(compression),) if compression else ()
     return base_metadata + compression_metadata
