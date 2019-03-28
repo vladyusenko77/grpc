@@ -413,6 +413,8 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
       credentials: An optional CallCredentials for the RPC.
       wait_for_ready: This is an EXPERIMENTAL argument. An optional flag t
         enable wait for ready mechanism.
+      compression: An element of grpc.compression, e.g.
+        grpc.compression.Gzip.
     """
 
 
