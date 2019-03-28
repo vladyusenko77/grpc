@@ -141,10 +141,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 @contextlib.contextmanager
 def _instrumented_client_server_pair(channel_kwargs, server_handler):
-    host = 'localhost'
+    host = '127.0.0.1'
     server = test_common.test_server()
     server.add_generic_rpc_handlers((server_handler,))
-    server_port = server.add_insecure_port('[::]:0')
+    server_port = server.add_insecure_port('{}:0'.format(host))
     server.start()
     with _tcp_proxy.TcpProxy(host, host, server_port) as proxy:
         proxy_port = proxy.get_port()
