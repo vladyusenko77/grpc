@@ -44,9 +44,9 @@ def service_pipeline(interceptors):
 
 
 class _ClientCallDetails(
-        collections.namedtuple(
-            '_ClientCallDetails',
-            ('method', 'timeout', 'metadata', 'credentials', 'wait_for_ready', 'compression')),
+        collections.namedtuple('_ClientCallDetails',
+                               ('method', 'timeout', 'metadata', 'credentials',
+                                'wait_for_ready', 'compression')),
         grpc.ClientCallDetails):
     pass
 
@@ -81,7 +81,6 @@ def _unwrap_client_call_details(call_details, default_details):
         compression = call_details.compression
     except AttributeError:
         compression = default_details.compression
-
 
     return method, timeout, metadata, credentials, wait_for_ready, compression
 
@@ -230,8 +229,9 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                    credentials=None,
                    wait_for_ready=None,
                    compression=None):
-        client_call_details = _ClientCallDetails(
-            self._method, timeout, metadata, credentials, wait_for_ready, compression)
+        client_call_details = _ClientCallDetails(self._method, timeout,
+                                                 metadata, credentials,
+                                                 wait_for_ready, compression)
 
         def continuation(new_details, request):
             new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
@@ -276,8 +276,9 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                credentials=None,
                wait_for_ready=None,
                compression=None):
-        client_call_details = _ClientCallDetails(
-            self._method, timeout, metadata, credentials, wait_for_ready, compression)
+        client_call_details = _ClientCallDetails(self._method, timeout,
+                                                 metadata, credentials,
+                                                 wait_for_ready, compression)
 
         def continuation(new_details, request):
             new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
@@ -311,8 +312,9 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                  credentials=None,
                  wait_for_ready=None,
                  compression=None):
-        client_call_details = _ClientCallDetails(
-            self._method, timeout, metadata, credentials, wait_for_ready, compression)
+        client_call_details = _ClientCallDetails(self._method, timeout,
+                                                 metadata, credentials,
+                                                 wait_for_ready, compression)
 
         def continuation(new_details, request):
             new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
@@ -362,8 +364,9 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                    credentials=None,
                    wait_for_ready=None,
                    compression=None):
-        client_call_details = _ClientCallDetails(
-            self._method, timeout, metadata, credentials, wait_for_ready, compression)
+        client_call_details = _ClientCallDetails(self._method, timeout,
+                                                 metadata, credentials,
+                                                 wait_for_ready, compression)
 
         def continuation(new_details, request_iterator):
             new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
@@ -408,8 +411,9 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                credentials=None,
                wait_for_ready=None,
                compression=None):
-        client_call_details = _ClientCallDetails(
-            self._method, timeout, metadata, credentials, wait_for_ready, compression)
+        client_call_details = _ClientCallDetails(self._method, timeout,
+                                                 metadata, credentials,
+                                                 wait_for_ready, compression)
 
         def continuation(new_details, request_iterator):
             new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
@@ -443,8 +447,9 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
                  credentials=None,
                  wait_for_ready=None,
                  compression=None):
-        client_call_details = _ClientCallDetails(
-            self._method, timeout, metadata, credentials, wait_for_ready, compression)
+        client_call_details = _ClientCallDetails(self._method, timeout,
+                                                 metadata, credentials,
+                                                 wait_for_ready, compression)
 
         def continuation(new_details, request_iterator):
             new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (

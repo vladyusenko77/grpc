@@ -924,13 +924,19 @@ def _validate_generic_rpc_handlers(generic_rpc_handlers):
                 'not have "service" method!'.format(generic_rpc_handler))
 
 
+def _augment_options(base_options, compression):
+    compression_option = ((cygrpc.GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                           compression),) if compression else ()
+    return tuple(base_options) + compression_option
+
+
 class _Server(grpc.Server):
 
     # pylint: disable=too-many-arguments
     def __init__(self, thread_pool, generic_handlers, interceptors, options,
-                 maximum_concurrent_rpcs):
+                 maximum_concurrent_rpcs, compression):
         completion_queue = cygrpc.CompletionQueue()
-        server = cygrpc.Server(options)
+        server = cygrpc.Server(_augment_options(options, compression))
         server.register_completion_queue(completion_queue)
         self._state = _ServerState(completion_queue, server, generic_handlers,
                                    _interceptor.service_pipeline(interceptors),
@@ -961,7 +967,7 @@ class _Server(grpc.Server):
 
 
 def create_server(thread_pool, generic_rpc_handlers, interceptors, options,
-                  maximum_concurrent_rpcs):
+                  maximum_concurrent_rpcs, compression):
     _validate_generic_rpc_handlers(generic_rpc_handlers)
     return _Server(thread_pool, generic_rpc_handlers, interceptors, options,
-                   maximum_concurrent_rpcs)
+                   maximum_concurrent_rpcs, compression)

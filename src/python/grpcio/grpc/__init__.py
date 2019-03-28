@@ -1767,7 +1767,8 @@ def server(thread_pool,
            handlers=None,
            interceptors=None,
            options=None,
-           maximum_concurrent_rpcs=None):
+           maximum_concurrent_rpcs=None,
+           compression=None):
     """Creates a Server with which RPCs can be serviced.
 
     Args:
@@ -1785,6 +1786,9 @@ def server(thread_pool,
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
+      compression: An element of grpc.compression, e.g.
+        grpc.compression.Gzip. This compression algorithm will be used for the
+        lifetime of the server unless overridden.
 
     Returns:
       A Server object.
@@ -1794,7 +1798,7 @@ def server(thread_pool,
                                  if handlers is None else handlers, ()
                                  if interceptors is None else interceptors, ()
                                  if options is None else options,
-                                 maximum_concurrent_rpcs)
+                                 maximum_concurrent_rpcs, compression)
 
 
 @contextlib.contextmanager
