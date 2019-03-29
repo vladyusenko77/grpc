@@ -542,11 +542,10 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         if state is None:
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         else:
-            deadline_to_propagate = _determine_deadline(deadline)
             call = self._channel.segregated_call(
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
-                self._method, None, deadline_to_propagate, metadata, None
-                if credentials is None else credentials._credentials, ((
+                self._method, None, _determine_deadline(deadline), metadata,
+                None if credentials is None else credentials._credentials, ((
                     operations,
                     None,
                 ),), self._context)
@@ -610,13 +609,14 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         self._response_deserializer = response_deserializer
         self._context = cygrpc.build_census_context()
 
-    def __call__(self,
-                 request,
-                 timeout=None,
-                 metadata=None,
-                 credentials=None,
-                 wait_for_ready=None,
-                 compression=None):
+    def __call__(  # pylint: disable=too-many-locals
+            self,
+            request,
+            timeout=None,
+            metadata=None,
+            credentials=None,
+            wait_for_ready=None,
+            compression=None):
         deadline, serialized_request, rendezvous = _start_unary_request(
             request, timeout, self._request_serializer)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
@@ -638,12 +638,13 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 ),
                 (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
             )
-            event_handler = _event_handler(state, self._response_deserializer)
             call = self._managed_call(
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
                 self._method, None, _determine_deadline(deadline), metadata,
-                None if credentials is None else credentials._credentials,
-                operationses, event_handler, self._context)
+                None if credentials is None else
+                credentials._credentials, operationses,
+                _event_handler(state,
+                               self._response_deserializer), self._context)
             return _Rendezvous(state, call, self._response_deserializer,
                                deadline)
 
@@ -666,12 +667,11 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         state = _RPCState(_STREAM_UNARY_INITIAL_DUE, None, None, None, None)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
             wait_for_ready)
-        deadline_to_propagate = _determine_deadline(deadline)
         augmented_metadata = grpc.compression._augment_metadata(
             metadata, compression)
         call = self._channel.segregated_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
-            None, deadline_to_propagate, augmented_metadata, None
+            None, _determine_deadline(deadline), augmented_metadata, None
             if credentials is None else credentials._credentials,
             _stream_unary_invocation_operationses_and_tags(
                 augmented_metadata, initial_metadata_flags), self._context)
@@ -767,10 +767,9 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
         )
         event_handler = _event_handler(state, self._response_deserializer)
-        deadline_to_propagate = _determine_deadline(deadline)
         call = self._managed_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
-            None, deadline_to_propagate, augmented_metadata, None
+            None, _determine_deadline(deadline), augmented_metadata, None
             if credentials is None else credentials._credentials, operationses,
             event_handler, self._context)
         _consume_request_iterator(request_iterator, state, call,

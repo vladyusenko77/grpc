@@ -234,8 +234,10 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                                                  wait_for_ready, compression)
 
         def continuation(new_details, request):
-            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
-                _unwrap_client_call_details(new_details, client_call_details))
+            (new_method, new_timeout, new_metadata, new_credentials,
+             new_wait_for_ready,
+             new_compression) = (_unwrap_client_call_details(
+                 new_details, client_call_details))
             try:
                 response, call = self._thunk(new_method).with_call(
                     request,
@@ -281,8 +283,10 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                                                  wait_for_ready, compression)
 
         def continuation(new_details, request):
-            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
-                _unwrap_client_call_details(new_details, client_call_details))
+            (new_method, new_timeout, new_metadata, new_credentials,
+             new_wait_for_ready,
+             new_compression) = (_unwrap_client_call_details(
+                 new_details, client_call_details))
             return self._thunk(new_method).future(
                 request,
                 timeout=new_timeout,
@@ -317,8 +321,10 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                                                  wait_for_ready, compression)
 
         def continuation(new_details, request):
-            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
-                _unwrap_client_call_details(new_details, client_call_details))
+            (new_method, new_timeout, new_metadata, new_credentials,
+             new_wait_for_ready,
+             new_compression) = (_unwrap_client_call_details(
+                 new_details, client_call_details))
             return self._thunk(new_method)(
                 request,
                 timeout=new_timeout,
@@ -369,8 +375,10 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                                                  wait_for_ready, compression)
 
         def continuation(new_details, request_iterator):
-            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
-                _unwrap_client_call_details(new_details, client_call_details))
+            (new_method, new_timeout, new_metadata, new_credentials,
+             new_wait_for_ready,
+             new_compression) = (_unwrap_client_call_details(
+                 new_details, client_call_details))
             try:
                 response, call = self._thunk(new_method).with_call(
                     request_iterator,
@@ -416,8 +424,10 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                                                  wait_for_ready, compression)
 
         def continuation(new_details, request_iterator):
-            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
-                _unwrap_client_call_details(new_details, client_call_details))
+            (new_method, new_timeout, new_metadata, new_credentials,
+             new_wait_for_ready,
+             new_compression) = (_unwrap_client_call_details(
+                 new_details, client_call_details))
             return self._thunk(new_method).future(
                 request_iterator,
                 timeout=new_timeout,
@@ -452,8 +462,10 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
                                                  wait_for_ready, compression)
 
         def continuation(new_details, request_iterator):
-            new_method, new_timeout, new_metadata, new_credentials, new_wait_for_ready, new_compression = (
-                _unwrap_client_call_details(new_details, client_call_details))
+            (new_method, new_timeout, new_metadata, new_credentials,
+             new_wait_for_ready,
+             new_compression) = (_unwrap_client_call_details(
+                 new_details, client_call_details))
             return self._thunk(new_method)(
                 request_iterator,
                 timeout=new_timeout,
