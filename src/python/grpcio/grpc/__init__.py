@@ -671,7 +671,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None):
+                 wait_for_ready=None,
+                 compression=None):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -683,6 +684,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -700,7 +703,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                   timeout=None,
                   metadata=None,
                   credentials=None,
-                  wait_for_ready=None):
+                  wait_for_ready=None,
+                  compression=None):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -712,6 +716,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -729,7 +735,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                timeout=None,
                metadata=None,
                credentials=None,
-               wait_for_ready=None):
+               wait_for_ready=None,
+               compression=None):
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -741,6 +748,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -761,7 +770,8 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None):
+                 wait_for_ready=None,
+                 compression=None):
         """Invokes the underlying RPC.
 
         Args:
@@ -773,6 +783,8 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -792,7 +804,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None):
+                 wait_for_ready=None,
+                 compression=None):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -805,6 +818,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -822,7 +837,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                   timeout=None,
                   metadata=None,
                   credentials=None,
-                  wait_for_ready=None):
+                  wait_for_ready=None,
+                  compression=None):
         """Synchronously invokes the underlying RPC on the client.
 
         Args:
@@ -835,6 +851,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -852,7 +870,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                timeout=None,
                metadata=None,
                credentials=None,
-               wait_for_ready=None):
+               wait_for_ready=None,
+               compression=None):
         """Asynchronously invokes the underlying RPC on the client.
 
         Args:
@@ -864,6 +883,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -884,7 +905,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
                  timeout=None,
                  metadata=None,
                  credentials=None,
-                 wait_for_ready=None):
+                 wait_for_ready=None,
+                 compression=None):
         """Invokes the underlying RPC on the client.
 
         Args:
@@ -896,6 +918,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           credentials: An optional CallCredentials for the RPC.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
+          compression: An element of grpc.compression, e.g.
+            grpc.compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -1101,7 +1125,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     @abc.abstractmethod
     def set_compression(self, compression):
-        """Set the compression algorithm to be used for the entire of the call.
+        """Set the compression algorithm to be used for the entire call.
 
         Args:
           compression: An element of grpc.compression, e.g.
@@ -1193,6 +1217,15 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         Args:
           details: A UTF-8-encodable string to be sent to the client upon
             termination of the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def disable_next_message_compression(self):
+        """Disables compression for the next response message.
+
+        This method will override any compression configuration set during
+        server creation or set on the call.
         """
         raise NotImplementedError()
 
