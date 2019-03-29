@@ -217,7 +217,7 @@ def _stream_unary_client(channel, multicallable_kwargs, message):
 
 def _stream_stream_client(channel, multicallable_kwargs, message):
     multi_callable = channel.stream_stream(_STREAM_STREAM)
-    requests = (_REQUEST for _ in range(test_constants.STREAM_LENGTH))
+    requests = (_REQUEST for _ in range(_STREAM_LENGTH))
     response_iterator = multi_callable(requests, **multicallable_kwargs)
     for response in response_iterator:
         if response != message:
@@ -285,9 +285,14 @@ class CompressionTest(unittest.TestCase):
         else:
             self.assertNotCompressed(received_ratio)
 
-    # TODO(rbellevi): Implement.
     def testDisableNextCompressionStreaming(self):
-        pass
+        server_kwargs = {
+            'compression': grpc.compression.Deflate,
+        }
+        _, received_ratio = _get_compression_ratios(
+            _unary_stream_client, {}, {}, {}, _GenericHandler(None), {}, {},
+            server_kwargs, _GenericHandler(disable_next_compression), _REQUEST)
+        self.assertNotCompressed(received_ratio)
 
 
 def _get_compression_str(name, value):

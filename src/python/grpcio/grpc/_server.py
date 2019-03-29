@@ -260,7 +260,6 @@ class _Context(grpc.ServicerContext):
                 cygrpc.auth_context(self._rpc_event.call))
         }
 
-    # TODO(rbellevi): Prefer setting level to setting algorithm.
     def set_compression(self, compression):
         with self._state.condition:
             self._state.compression_algorithm = compression
