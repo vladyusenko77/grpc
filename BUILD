@@ -221,6 +221,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/create_channel.h",
     "include/grpcpp/create_channel_impl.h",
     "include/grpcpp/create_channel_posix.h",
+    "include/grpcpp/create_channel_posix_impl.h",
     "include/grpcpp/ext/health_check_service_server_builder_option.h",
     "include/grpcpp/generic/async_generic_service.h",
     "include/grpcpp/generic/generic_stub.h",
@@ -236,6 +237,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/rpc_service_method.h",
     "include/grpcpp/impl/serialization_traits.h",
     "include/grpcpp/impl/server_builder_option.h",
+    "include/grpcpp/impl/server_builder_option_impl.h",
     "include/grpcpp/impl/server_builder_plugin.h",
     "include/grpcpp/impl/server_initializer.h",
     "include/grpcpp/impl/service_type.h",
@@ -251,6 +253,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/server_builder.h",
     "include/grpcpp/server_context.h",
     "include/grpcpp/server_posix.h",
+    "include/grpcpp/server_posix_impl.h",
     "include/grpcpp/support/async_stream.h",
     "include/grpcpp/support/async_unary_call.h",
     "include/grpcpp/support/byte_buffer.h",
@@ -2222,6 +2225,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/channelz_service_plugin.h",
+        "include/grpcpp/ext/channelz_service_plugin_impl.h",
     ],
     deps = [
         ":grpc++",
@@ -2286,6 +2290,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpcpp/opencensus.h",
+        "include/grpcpp/opencensus_impl.h",
         "src/cpp/ext/filters/census/channel_filter.h",
         "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/context.h",

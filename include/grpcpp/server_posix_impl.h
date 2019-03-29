@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2018 gRPC authors.
+ * Copyright 2016 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,27 @@
  *
  */
 
-#ifndef GRPCPP_OPENCENSUS_H
-#define GRPCPP_OPENCENSUS_H
+#ifndef GRPCPP_SERVER_POSIX_IMPL_H
+#define GRPCPP_SERVER_POSIX_IMPL_H
 
-#include "grpcpp/opencensus_impl.h"
+#include <memory>
 
-namespace grpc {
+#include <grpc/support/port_platform.h>
+#include <grpcpp/server.h>
 
-static inline void RegisterOpenCensusPlugin() {
-  ::grpc_impl::RegisterOpenCensusPlugin();
-}
-static inline void RegisterOpenCensusViewsForExport() {
-  ::grpc_impl::RegisterOpenCensusViewsForExport();
-}
-static inline ::opencensus::trace::Span GetSpanFromServerContext(
-    ServerContext* context) {
-  return ::grpc_impl::GetSpanFromServerContext(context);
-}
+namespace grpc_impl {
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+
+/// Add a new client to a \a Server communicating over the given
+/// file descriptor.
+///
+/// \param server The server to add the client to.
+/// \param fd The file descriptor representing a socket.
+void AddInsecureChannelFromFd(grpc::Server* server, int fd);
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 }  // namespace grpc
 
-#endif  // GRPCPP_OPENCENSUS_H
+#endif  // GRPCPP_SERVER_POSIX_IMPL_H
