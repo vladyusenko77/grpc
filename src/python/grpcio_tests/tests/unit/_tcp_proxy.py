@@ -64,8 +64,8 @@ class TcpProxy(object):
                                                 self._gateway_port)
 
         # The following three attributes are owned by the serving thread.
-        self._northbound_data = ""
-        self._southbound_data = ""
+        self._northbound_data = b""
+        self._southbound_data = b""
         self._client_sockets = []
 
         self._thread = threading.Thread(target=self._run_proxy)
@@ -99,12 +99,12 @@ class TcpProxy(object):
             if socket_to_write is self._proxy_socket:
                 if self._southbound_data:
                     self._proxy_socket.sendall(self._southbound_data)
-                    self._southbound_data = ""
+                    self._southbound_data = b""
             else:
                 # Otherwise, write to a connected client.
                 if self._northbound_data:
                     socket_to_write.sendall(self._northbound_data)
-                    self._northbound_data = ""
+                    self._northbound_data = b""
 
     def _run_proxy(self):
         while not self._stop_event.is_set():
