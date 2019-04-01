@@ -32,6 +32,10 @@ from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 from tests.unit import _tcp_proxy
 
+# This test requires the byte length of each connection to be dterministic. As
+# it turns out, flow control puts bytes on the wire in a nondeterministic
+# manner. We disable it here in order to measure compression ratios
+# deterministically.
 os.environ['GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL'] = 'true'
 
 _UNARY_UNARY = '/test/UnaryUnary'
