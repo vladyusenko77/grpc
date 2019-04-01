@@ -81,11 +81,11 @@ def make_handle_stream_unary(pre_response_callback):
 def make_handle_stream_stream(pre_response_callback):
 
     def _handle_stream(request_iterator, servicer_context):
-        if pre_response_callback:
-            pre_response_callback(request_iterator, servicer_context)
         # TODO(issue:#6891) We should be able to remove this loop,
         # and replace with return; yield
         for request in request_iterator:
+            if pre_response_callback:
+                pre_response_callback(request, servicer_context)
             yield request
 
     return _handle_stream
@@ -96,9 +96,14 @@ def set_call_compression(request_or_iterator, servicer_context):
     servicer_context.set_compression(grpc.compression.Gzip)
 
 
-def disable_next_compression(request_or_iterator, servicer_context):
-    del request_or_iterator
+def disable_next_compression(request, servicer_context):
+    del request
     servicer_context.disable_next_message_compression()
+
+
+def disable_first_compression(request, servicer_context):
+    if int(request.decode('ascii')) == 0:
+        servicer_context.disable_next_message_compression()
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
@@ -217,12 +222,13 @@ def _stream_unary_client(channel, multicallable_kwargs, message):
 
 def _stream_stream_client(channel, multicallable_kwargs, message):
     multi_callable = channel.stream_stream(_STREAM_STREAM)
-    requests = (_REQUEST for _ in range(_STREAM_LENGTH))
+    request_prefix = str(0).encode('ascii') * 100
+    requests = (request_prefix + str(i).encode('ascii') for i in range(_STREAM_LENGTH))
     response_iterator = multi_callable(requests, **multicallable_kwargs)
-    for response in response_iterator:
-        if response != message:
+    for i, response in enumerate(response_iterator):
+        if int(response.decode('ascii')) != i:
             raise RuntimeError("Request '{}' != Response '{}'".format(
-                message, response))
+                i, response))
 
 
 _COMPRESSION_RATIO_THRESHOLD = 0.1
@@ -290,9 +296,19 @@ class CompressionTest(unittest.TestCase):
             'compression': grpc.compression.Deflate,
         }
         _, received_ratio = _get_compression_ratios(
-            _unary_stream_client, {}, {}, {}, _GenericHandler(None), {}, {},
+            _stream_stream_client, {}, {}, {}, _GenericHandler(None), {}, {},
             server_kwargs, _GenericHandler(disable_next_compression), _REQUEST)
         self.assertNotCompressed(received_ratio)
+
+
+    def testDisableNextCompressionStreamingResets(self):
+        server_kwargs = {
+            'compression': grpc.compression.Deflate,
+        }
+        _, received_ratio = _get_compression_ratios(
+            _stream_stream_client, {}, {}, {}, _GenericHandler(None), {}, {},
+            server_kwargs, _GenericHandler(disable_first_compression), _REQUEST)
+        self.assertCompressed(received_ratio)
 
 
 def _get_compression_str(name, value):

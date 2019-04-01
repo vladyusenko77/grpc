@@ -601,6 +601,8 @@ def _send_message_callback_to_blocking_iterator_adapter(
             send_response_callback(response)
             if not _is_rpc_state_active(state):
                 break
+            with state.condition:
+                state.disable_next_compression = False
         else:
             break
 
