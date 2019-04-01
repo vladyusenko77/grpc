@@ -32,15 +32,19 @@ _TCP_PROXY_TIMEOUT = datetime.timedelta(milliseconds=500)
 
 
 def _init_listen_socket(bind_address):
-    listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    listen_socket.bind((bind_address, 0))
+    listen_socket = None
+    if socket.has_ipv6:
+        listen_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        listen_socket.bind((bind_address, 0, 0, 0))
+    else:
+        listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        listen_socket.bind((bind_address, 0))
     listen_socket.listen(1)
     return listen_socket, listen_socket.getsockname()[1]
 
 
 def _init_proxy_socket(gateway_address, gateway_port):
-    proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    proxy_socket.connect((gateway_address, gateway_port))
+    proxy_socket = socket.create_connection((gateway_address, gateway_port))
     return proxy_socket
 
 

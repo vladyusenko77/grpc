@@ -146,7 +146,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 @contextlib.contextmanager
 def _instrumented_client_server_pair(channel_kwargs, server_kwargs,
                                      server_handler):
-    host = '127.0.0.1'
+    host = 'localhost'
     server = grpc.server(futures.ThreadPoolExecutor(), **server_kwargs)
     server.add_generic_rpc_handlers((server_handler,))
     server_port = server.add_insecure_port('{}:0'.format(host))
