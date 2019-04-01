@@ -101,7 +101,7 @@ class TcpProxy(object):
                 with self._byte_count_lock:
                     self._received_byte_count += len(data)
                 self._northbound_data += data
-            else:
+            elif socket_to_read in self._client_sockets:
                 # Otherwise, read from a connected client.
                 data = socket_to_read.recv(_TCP_PROXY_BUFFER_SIZE)
                 if data:
@@ -110,6 +110,8 @@ class TcpProxy(object):
                     self._southbound_data += data
                 else:
                     self._client_sockets.remove(socket_to_read)
+            else:
+                raise RuntimeError('Unidentified socket appeared in read set.')
 
     def _handle_writes(self, sockets_to_write):
         for socket_to_write in sockets_to_write:
@@ -117,11 +119,12 @@ class TcpProxy(object):
                 if self._southbound_data:
                     self._proxy_socket.sendall(self._southbound_data)
                     self._southbound_data = b""
-            else:
-                # Otherwise, write to a connected client.
+            elif socket_to_write in self._client_sockets:
                 if self._northbound_data:
                     socket_to_write.sendall(self._northbound_data)
                     self._northbound_data = b""
+            else:
+                raise RuntimeError('Unidentified socket appeared in write set.')
 
     def _run_proxy(self):
         while not self._stop_event.is_set():
