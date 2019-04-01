@@ -47,7 +47,7 @@ _STREAM_STREAM = '/test/StreamStream'
 _STREAM_LENGTH = test_constants.STREAM_LENGTH // 2
 
 
-def make_handle_unary_unary(pre_response_callback):
+def _make_handle_unary_unary(pre_response_callback):
 
     def _handle_unary(request, servicer_context):
         if pre_response_callback:
@@ -57,7 +57,7 @@ def make_handle_unary_unary(pre_response_callback):
     return _handle_unary
 
 
-def make_handle_unary_stream(pre_response_callback):
+def _make_handle_unary_stream(pre_response_callback):
 
     def _handle_unary_stream(request, servicer_context):
         if pre_response_callback:
@@ -68,7 +68,7 @@ def make_handle_unary_stream(pre_response_callback):
     return _handle_unary_stream
 
 
-def make_handle_stream_unary(pre_response_callback):
+def _make_handle_stream_unary(pre_response_callback):
 
     def _handle_stream_unary(request_iterator, servicer_context):
         if pre_response_callback:
@@ -82,7 +82,7 @@ def make_handle_stream_unary(pre_response_callback):
     return _handle_stream_unary
 
 
-def make_handle_stream_stream(pre_response_callback):
+def _make_handle_stream_stream(pre_response_callback):
 
     def _handle_stream(request_iterator, servicer_context):
         # TODO(issue:#6891) We should be able to remove this loop,
@@ -124,14 +124,14 @@ class _MethodHandler(grpc.RpcMethodHandler):
         self.stream_stream = None
 
         if self.request_streaming and self.response_streaming:
-            self.stream_stream = make_handle_stream_stream(
+            self.stream_stream = _make_handle_stream_stream(
                 pre_response_callback)
         elif not self.request_streaming and not self.response_streaming:
-            self.unary_unary = make_handle_unary_unary(pre_response_callback)
+            self.unary_unary = _make_handle_unary_unary(pre_response_callback)
         elif not self.request_streaming and self.response_streaming:
-            self.unary_stream = make_handle_unary_stream(pre_response_callback)
+            self.unary_stream = _make_handle_unary_stream(pre_response_callback)
         else:
-            self.stream_unary = make_handle_stream_unary(pre_response_callback)
+            self.stream_unary = _make_handle_stream_unary(pre_response_callback)
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
