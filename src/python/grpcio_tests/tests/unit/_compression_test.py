@@ -46,6 +46,9 @@ _STREAM_STREAM = '/test/StreamStream'
 # Cut down on test time.
 _STREAM_LENGTH = test_constants.STREAM_LENGTH // 2
 
+_REQUEST = b'\x00' * 100
+_COMPRESSION_RATIO_THRESHOLD = 0.1
+
 
 def _make_handle_unary_unary(pre_response_callback):
 
@@ -195,9 +198,6 @@ def _get_compression_ratios(client_function, first_channel_kwargs,
             float(first_bytes_received))
 
 
-_REQUEST = b'\x00' * 100
-
-
 def _unary_unary_client(channel, multicallable_kwargs, message):
     multi_callable = channel.unary_unary(_UNARY_UNARY)
     response = multi_callable(message, **multicallable_kwargs)
@@ -233,9 +233,6 @@ def _stream_stream_client(channel, multicallable_kwargs, message):
         if int(response.decode('ascii')) != i:
             raise RuntimeError("Request '{}' != Response '{}'".format(
                 i, response))
-
-
-_COMPRESSION_RATIO_THRESHOLD = 0.1
 
 
 class CompressionTest(unittest.TestCase):
