@@ -31,14 +31,27 @@ _TCP_PROXY_BUFFER_SIZE = 1024
 _TCP_PROXY_TIMEOUT = datetime.timedelta(milliseconds=500)
 
 
+def _create_socket_ipv4(bind_address):
+    listen_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    listen_socket.bind((bind_address, 0, 0, 0))
+    return listen_socket
+
+
+def _create_socket_ipv6(bind_address):
+    listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listen_socket.bind((bind_address, 0))
+    return listen_socket
+
+
 def _init_listen_socket(bind_address):
     listen_socket = None
     if socket.has_ipv6:
-        listen_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        listen_socket.bind((bind_address, 0, 0, 0))
+        try:
+            listen_socket = _create_socket_ipv6(bind_address)
+        except socket.error:
+            listen_socket = _create_socket_ipv4(bind_address)
     else:
-        listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        listen_socket.bind((bind_address, 0))
+        listen_socket = _create_socket_ipv4(bind_address)
     listen_socket.listen(1)
     return listen_socket, listen_socket.getsockname()[1]
 
