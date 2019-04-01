@@ -75,10 +75,9 @@ class TcpProxy(object):
 
         self._stop_event = threading.Event()
 
-        self._listen_socket, self._port = _init_listen_socket(
-            self._bind_address)
-        self._proxy_socket = _init_proxy_socket(self._gateway_address,
-                                                self._gateway_port)
+        self._port = None
+        self._listen_socket = None
+        self._proxy_socket = None
 
         # The following three attributes are owned by the serving thread.
         self._northbound_data = b""
@@ -86,6 +85,12 @@ class TcpProxy(object):
         self._client_sockets = []
 
         self._thread = threading.Thread(target=self._run_proxy)
+
+    def start(self):
+        self._listen_socket, self._port = _init_listen_socket(
+            self._bind_address)
+        self._proxy_socket = _init_proxy_socket(self._gateway_address,
+                                                self._gateway_port)
         self._thread.start()
 
     def get_port(self):
@@ -153,6 +158,7 @@ class TcpProxy(object):
             self._received_byte_count = 0
 
     def __enter__(self):
+        self.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
