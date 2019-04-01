@@ -123,8 +123,6 @@ class TcpProxy(object):
                 if self._northbound_data:
                     socket_to_write.sendall(self._northbound_data)
                     self._northbound_data = b""
-            else:
-                raise RuntimeError('Unidentified socket appeared in write set.')
 
     def _run_proxy(self):
         while not self._stop_event.is_set():
