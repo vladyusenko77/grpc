@@ -107,7 +107,6 @@ class TcpProxy(object):
                     self._received_byte_count += len(data)
                 self._northbound_data += data
             elif socket_to_read in self._client_sockets:
-                # Otherwise, read from a connected client.
                 data = socket_to_read.recv(_TCP_PROXY_BUFFER_SIZE)
                 if data:
                     with self._byte_count_lock:
