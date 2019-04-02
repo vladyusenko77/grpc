@@ -398,18 +398,14 @@ def _unary_request(rpc_event, state, request_deserializer):
     return unary_request
 
 
-def _maybe_request_compression(state, rpc_event):
+def _get_default_initial_metadata_operation(state, rpc_event):
     with state.condition:
-        if state.initial_metadata_allowed and state.compression_algorithm:
-            compression_metadata = (
-                _compression.compression_algorithm_to_metadata(
-                    state.compression_algorithm),)
-            operation = cygrpc.SendInitialMetadataOperation(
-                compression_metadata, _EMPTY_FLAGS)
-            rpc_event.call.start_server_batch((operation,),
-                                              _send_initial_metadata(state))
-            state.initial_metadata_allowed = False
-            state.due.add(_SEND_INITIAL_METADATA_TOKEN)
+        if state.initial_metadata_allowed:
+            initial_metadata = (_compression.compression_algorithm_to_metadata(
+                state.compression_algorithm),
+                               ) if state.compression_algorithm else None
+            return cygrpc.SendInitialMetadataOperation(initial_metadata,
+                                                       _EMPTY_FLAGS)
 
 
 def _call_behavior(rpc_event,
@@ -486,7 +482,7 @@ def _send_response(rpc_event, state, serialized_response):
         else:
             if state.initial_metadata_allowed:
                 operations = (
-                    cygrpc.SendInitialMetadataOperation(None, _EMPTY_FLAGS),
+                    _get_default_initial_metadata_operation(state, rpc_event),
                     cygrpc.SendMessageOperation(
                         serialized_response,
                         _state_to_send_message_op_flags(state)),
@@ -518,7 +514,7 @@ def _status(rpc_event, state, serialized_response):
             ]
             if state.initial_metadata_allowed:
                 operations.append(
-                    cygrpc.SendInitialMetadataOperation(None, _EMPTY_FLAGS))
+                    _get_default_initial_metadata_operation(state, rpc_event))
             if serialized_response is not None:
                 operations.append(
                     cygrpc.SendMessageOperation(
@@ -539,7 +535,6 @@ def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
         if argument is not None:
             response, proceed = _call_behavior(rpc_event, state, behavior,
                                                argument, request_deserializer)
-            _maybe_request_compression(state, rpc_event)
             if proceed:
                 serialized_response = _serialize_response(
                     rpc_event, state, response, response_serializer)
@@ -593,7 +588,6 @@ def _send_message_callback_to_blocking_iterator_adapter(
     while True:
         response, proceed = _take_response_from_response_iterator(
             rpc_event, state, response_iterator)
-        _maybe_request_compression(state, rpc_event)
         if proceed:
             send_response_callback(response)
             if not _is_rpc_state_active(state):
