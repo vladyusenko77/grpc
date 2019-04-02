@@ -35,6 +35,11 @@ def _compression_algorithm_to_metadata(compression):
             _compression_algorithm_to_metadata_value(compression))
 
 
+def create_channel_option(compression):
+    return ((cygrpc.GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                           compression),) if compression else ()
+
+
 def _augment_metadata(metadata, compression):
     if not metadata and not compression:
         return None
