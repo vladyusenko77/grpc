@@ -923,8 +923,7 @@ def _validate_generic_rpc_handlers(generic_rpc_handlers):
 
 
 def _augment_options(base_options, compression):
-    compression_option = ((cygrpc.GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
-                           compression),) if compression else ()
+    compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option
 
 
