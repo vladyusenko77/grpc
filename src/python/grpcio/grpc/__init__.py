@@ -1844,6 +1844,7 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
 
 
 class Compression(enum.IntEnum):
+    """Indicates the compression method to be used for an RPC."""
     NoCompression = _compression.NoCompression
     Deflate = _compression.Deflate
     Gzip = _compression.Gzip
