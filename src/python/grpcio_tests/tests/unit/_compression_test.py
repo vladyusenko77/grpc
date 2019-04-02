@@ -26,7 +26,6 @@ import logging
 import os
 
 import grpc
-import grpc.compression
 from grpc import _grpcio_metadata
 
 from tests.unit import test_common

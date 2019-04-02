@@ -21,7 +21,7 @@ import sys
 import six
 
 from grpc._cython import cygrpc as _cygrpc
-from grpc import compression
+from grpc import _compression
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -1844,9 +1844,9 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
 
 
 class Compression(object):
-    NoCompression = compression.NoCompression
-    Deflate = compression.Deflate
-    Gzip = compression.Gzip
+    NoCompression = _compression.NoCompression
+    Deflate = _compression.Deflate
+    Gzip = _compression.Gzip
 
 
 
@@ -1897,7 +1897,6 @@ __all__ = (
     'access_token_call_credentials',
     'composite_call_credentials',
     'composite_channel_credentials',
-    'compression',
     'ssl_server_credentials',
     'ssl_server_certificate_configuration',
     'dynamic_ssl_server_credentials',

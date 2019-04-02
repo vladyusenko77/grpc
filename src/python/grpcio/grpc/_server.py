@@ -24,6 +24,7 @@ import six
 
 import grpc
 from grpc import _common
+from grpc import _compression
 from grpc import _interceptor
 from grpc._cython import cygrpc
 
@@ -272,7 +273,7 @@ class _Context(grpc.ServicerContext):
                 if self._state.initial_metadata_allowed:
                     compression_metadata = (
                     ) if not self._state.compression_algorithm else (
-                        grpc.compression._compression_algorithm_to_metadata(
+                        _compression._compression_algorithm_to_metadata(
                             self._state.compression_algorithm),)
                     augmented_metadata = tuple(
                         initial_metadata) + compression_metadata
@@ -405,7 +406,7 @@ def _maybe_request_compression(state, rpc_event):
     with state.condition:
         if state.initial_metadata_allowed and state.compression_algorithm:
             compression_metadata = (
-                grpc.compression._compression_algorithm_to_metadata(
+                _compression._compression_algorithm_to_metadata(
                     state.compression_algorithm),)
             operation = cygrpc.SendInitialMetadataOperation(
                 compression_metadata, _EMPTY_FLAGS)

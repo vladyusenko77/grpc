@@ -19,7 +19,7 @@ import threading
 import time
 
 import grpc
-import grpc.compression
+from grpc import _compression
 from grpc import _common
 from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
@@ -518,7 +518,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, self._request_serializer)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
             wait_for_ready)
-        augmented_metadata = grpc.compression._augment_metadata(
+        augmented_metadata = _compression._augment_metadata(
             metadata, compression)
         if serialized_request is None:
             return None, None, None, rendezvous
@@ -624,7 +624,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         if serialized_request is None:
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         else:
-            augmented_metadata = grpc.compression._augment_metadata(
+            augmented_metadata = _compression._augment_metadata(
                 metadata, compression)
             state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
             operationses = (
@@ -667,7 +667,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         state = _RPCState(_STREAM_UNARY_INITIAL_DUE, None, None, None, None)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
             wait_for_ready)
-        augmented_metadata = grpc.compression._augment_metadata(
+        augmented_metadata = _compression._augment_metadata(
             metadata, compression)
         call = self._channel.segregated_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
@@ -720,7 +720,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         event_handler = _event_handler(state, self._response_deserializer)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
             wait_for_ready)
-        augmented_metadata = grpc.compression._augment_metadata(
+        augmented_metadata = _compression._augment_metadata(
             metadata, compression)
         call = self._managed_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
@@ -756,7 +756,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         state = _RPCState(_STREAM_STREAM_INITIAL_DUE, None, None, None, None)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
             wait_for_ready)
-        augmented_metadata = grpc.compression._augment_metadata(
+        augmented_metadata = _compression._augment_metadata(
             metadata, compression)
         operationses = (
             (

@@ -34,7 +34,7 @@ py_library(
 
 py_library(
     name = "compression",
-    srcs = ["compression.py"],
+    srcs = ["_compression.py"],
 )
 
 py_library(
