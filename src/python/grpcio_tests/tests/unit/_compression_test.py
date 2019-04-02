@@ -63,6 +63,15 @@ _COMPRESSION_NAMES = {
     grpc.compression.Gzip: 'GzipCompression',
 }
 
+_TEST_OPTIONS = {
+    'client_streaming': (True, False),
+    'server_streaming': (True, False),
+    'channel_compression': _COMPRESSION_METHODS,
+    'multicallable_compression': _COMPRESSION_METHODS,
+    'server_compression': _COMPRESSION_METHODS,
+    'server_call_compression': _COMPRESSION_METHODS,
+}
+
 
 def _make_handle_unary_unary(pre_response_callback):
 
@@ -112,7 +121,8 @@ def _make_handle_stream_stream(pre_response_callback):
     return _handle_stream
 
 
-def set_call_compression(compression_method, request_or_iterator, servicer_context):
+def set_call_compression(compression_method, request_or_iterator,
+                         servicer_context):
     del request_or_iterator
     servicer_context.set_compression(compression_method)
 
@@ -241,7 +251,8 @@ def _stream_unary_client(channel, multicallable_kwargs, message):
 def _stream_stream_client(channel, multicallable_kwargs, message):
     multi_callable = channel.stream_stream(_STREAM_STREAM)
     request_prefix = str(0).encode('ascii') * 100
-    requests = (request_prefix + str(i).encode('ascii') for i in range(_STREAM_LENGTH))
+    requests = (
+        request_prefix + str(i).encode('ascii') for i in range(_STREAM_LENGTH))
     response_iterator = multi_callable(requests, **multicallable_kwargs)
     for i, response in enumerate(response_iterator):
         if int(response.decode('ascii')) != i:
@@ -315,7 +326,6 @@ class CompressionTest(unittest.TestCase):
             server_kwargs, _GenericHandler(disable_next_compression), _REQUEST)
         self.assertNotCompressed(received_ratio)
 
-
     def testDisableNextCompressionStreamingResets(self):
         server_kwargs = {
             'compression': grpc.compression.Deflate,
@@ -342,47 +352,39 @@ def _get_compression_test_name(client_streaming, server_streaming,
         'Multicallable', multicallable_compression)
     server_compression_str = _get_compression_str('Server', server_compression)
     server_call_compression_str = _get_compression_str('ServerCall',
-                                                      server_call_compression)
+                                                       server_call_compression)
     return 'test{}{}{}{}{}'.format(
         arity, channel_compression_str, multicallable_compression_str,
         server_compression_str, server_call_compression_str)
 
 
-for client_streaming in (True, False):
-    for server_streaming in (True, False):
-        for channel_compression in _COMPRESSION_METHODS:
-            for multicallable_compression in _COMPRESSION_METHODS:
-                for server_compression in _COMPRESSION_METHODS:
-                    for server_call_compression in _COMPRESSION_METHODS:
+def _test_options(remaining_options=_TEST_OPTIONS, options={}):
+    if len(remaining_options) == 0:
+        yield options
+    else:
+        key = next(iter(remaining_options.keys()))
+        new_remaining = dict(remaining_options)
+        del new_remaining[key]
+        values = remaining_options[key]
+        for value in values:
+            new_options = dict(options)
+            new_options[key] = value
+            for result in _test_options(new_remaining, new_options):
+                yield result
 
-                        def test_compression(
-                                client_streaming, server_streaming,
-                                channel_compression, multicallable_compression,
-                                server_compression, server_call_compression):
 
-                            def _test_compression(self):
-                                self.assertConfigurationCompressed(
-                                    client_streaming=client_streaming,
-                                    server_streaming=server_streaming,
-                                    channel_compression=channel_compression,
-                                    multicallable_compression=
-                                    multicallable_compression,
-                                    server_compression=server_compression,
-                                    server_call_compression=server_call_compression
-                                )
+for options in _test_options():
 
-                            return _test_compression
+    def test_compression(**kwargs):
 
-                        test_name = _get_compression_test_name(
-                            client_streaming, server_streaming,
-                            channel_compression, multicallable_compression,
-                            server_compression, server_call_compression)
-                        setattr(
-                            CompressionTest, test_name,
-                            test_compression(
-                                client_streaming, server_streaming,
-                                channel_compression, multicallable_compression,
-                                server_compression, server_call_compression))
+        def _test_compression(self):
+            self.assertConfigurationCompressed(**kwargs)
+
+        return _test_compression
+
+    test_name = _get_compression_test_name(**options)
+    setattr(CompressionTest, _get_compression_test_name(**options),
+            test_compression(**options))
 
 if __name__ == '__main__':
     logging.basicConfig()
