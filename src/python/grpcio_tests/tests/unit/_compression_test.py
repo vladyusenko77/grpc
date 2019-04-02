@@ -46,6 +46,8 @@ _STREAM_STREAM = '/test/StreamStream'
 # Cut down on test time.
 _STREAM_LENGTH = test_constants.STREAM_LENGTH // 8
 
+_HOST = 'localhost'
+
 _REQUEST = b'\x00' * 100
 _COMPRESSION_RATIO_THRESHOLD = 0.1
 _COMPRESSION_METHODS = (
@@ -181,14 +183,13 @@ class _GenericHandler(grpc.GenericRpcHandler):
 @contextlib.contextmanager
 def _instrumented_client_server_pair(channel_kwargs, server_kwargs,
                                      server_handler):
-    host = 'localhost'
     server = grpc.server(futures.ThreadPoolExecutor(), **server_kwargs)
     server.add_generic_rpc_handlers((server_handler,))
-    server_port = server.add_insecure_port('{}:0'.format(host))
+    server_port = server.add_insecure_port('{}:0'.format(_HOST))
     server.start()
-    with _tcp_proxy.TcpProxy(host, host, server_port) as proxy:
+    with _tcp_proxy.TcpProxy(_HOST, _HOST, server_port) as proxy:
         proxy_port = proxy.get_port()
-        with grpc.insecure_channel('{}:{}'.format(host, proxy_port),
+        with grpc.insecure_channel('{}:{}'.format(_HOST, proxy_port),
                                    **channel_kwargs) as client_channel:
             try:
                 yield client_channel, proxy, server
