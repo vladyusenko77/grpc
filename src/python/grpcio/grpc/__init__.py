@@ -1843,7 +1843,7 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
     context._finalize_state()  # pylint: disable=protected-access
 
 
-class Compression(object):
+class Compression(enum.IntEnum):
     NoCompression = _compression.NoCompression
     Deflate = _compression.Deflate
     Gzip = _compression.Gzip
