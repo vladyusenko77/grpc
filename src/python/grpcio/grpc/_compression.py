@@ -30,22 +30,22 @@ def _compression_algorithm_to_metadata_value(compression):
     return _METADATA_STRING_MAPPING[compression]
 
 
-def _compression_algorithm_to_metadata(compression):
+def compression_algorithm_to_metadata(compression):
     return (cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
             _compression_algorithm_to_metadata_value(compression))
 
 
 def create_channel_option(compression):
     return ((cygrpc.GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
-                           compression),) if compression else ()
+             compression),) if compression else ()
 
 
-def _augment_metadata(metadata, compression):
+def augment_metadata(metadata, compression):
     if not metadata and not compression:
         return None
     base_metadata = tuple(metadata) if metadata else ()
     compression_metadata = (
-        _compression_algorithm_to_metadata(compression),) if compression else ()
+        compression_algorithm_to_metadata(compression),) if compression else ()
     return base_metadata + compression_metadata
 
 

@@ -271,7 +271,7 @@ class _Context(grpc.ServicerContext):
                 _raise_rpc_error(self._state)
             else:
                 if self._state.initial_metadata_allowed:
-                    augmented_metadata = _compression._augment_metadata(
+                    augmented_metadata = _compression.augment_metadata(
                         initial_metadata, self._state.compression_algorithm)
                     operation = cygrpc.SendInitialMetadataOperation(
                         augmented_metadata, _EMPTY_FLAGS)
@@ -402,7 +402,7 @@ def _maybe_request_compression(state, rpc_event):
     with state.condition:
         if state.initial_metadata_allowed and state.compression_algorithm:
             compression_metadata = (
-                _compression._compression_algorithm_to_metadata(
+                _compression.compression_algorithm_to_metadata(
                     state.compression_algorithm),)
             operation = cygrpc.SendInitialMetadataOperation(
                 compression_metadata, _EMPTY_FLAGS)
