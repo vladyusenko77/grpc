@@ -18,17 +18,15 @@ NoCompression = cygrpc.CompressionAlgorithm.none
 Deflate = cygrpc.CompressionAlgorithm.deflate
 Gzip = cygrpc.CompressionAlgorithm.gzip
 
+_METADATA_STRING_MAPPING = {
+    NoCompression: 'identity',
+    Deflate: 'deflate',
+    Gzip: 'gzip',
+}
+
 
 def _compression_algorithm_to_metadata_value(compression):
-    if compression == NoCompression:
-        return 'identity'
-    elif compression == Deflate:
-        return 'deflate'
-    elif compression == Gzip:
-        return 'gzip'
-    else:
-        raise ValueError(
-            'Unknown compression algorithm "{}".'.format(compression))
+    return _METADATA_STRING_MAPPING[compression]
 
 
 def _compression_algorithm_to_metadata(compression):
