@@ -373,7 +373,6 @@ for options in _test_options():
 
         return _test_compression
 
-    test_name = _get_compression_test_name(**options)
     setattr(CompressionTest, _get_compression_test_name(**options),
             test_compression(**options))
 
