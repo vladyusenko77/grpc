@@ -22,6 +22,7 @@ import unittest
 import contextlib
 from concurrent import futures
 import functools
+import itertools
 import logging
 import os
 
@@ -32,7 +33,7 @@ from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 from tests.unit import _tcp_proxy
 
-# This test requires the byte length of each connection to be dterministic. As
+# This test requires the byte length of each connection to be deterministic. As
 # it turns out, flow control puts bytes on the wire in a nondeterministic
 # manner. We disable it here in order to measure compression ratios
 # deterministically.
@@ -358,21 +359,9 @@ def _get_compression_test_name(client_streaming, server_streaming,
         server_compression_str, server_call_compression_str)
 
 
-def _test_options(remaining_options=None, options=None):
-    remaining_options = remaining_options if remaining_options is not None else _TEST_OPTIONS
-    options = options if options is not None else {}
-    if not remaining_options:
-        yield options
-    else:
-        key = next(iter(remaining_options.keys()), None)
-        new_remaining = dict(remaining_options)
-        del new_remaining[key]
-        values = remaining_options[key]
-        for value in values:
-            new_options = dict(options)
-            new_options[key] = value
-            for result in _test_options(new_remaining, new_options):
-                yield result
+def _test_options():
+    for test_parameters in itertools.product(*_TEST_OPTIONS.values()):
+        yield dict(zip(_TEST_OPTIONS.keys(), test_parameters))
 
 
 for options in _test_options():
