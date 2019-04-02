@@ -131,6 +131,16 @@ def _send_status_from_server(state, token):
     return send_status_from_server
 
 
+def _get_default_initial_metadata_operation(state):
+    with state.condition:
+        if state.initial_metadata_allowed:
+            initial_metadata = (_compression.compression_algorithm_to_metadata(
+                state.compression_algorithm),
+                               ) if state.compression_algorithm else None
+            return cygrpc.SendInitialMetadataOperation(initial_metadata,
+                                                       _EMPTY_FLAGS)
+
+
 def _abort(state, call, code, details):
     if state.client is not _CANCELLED:
         effective_code = _abortion_code(state, code)
@@ -396,16 +406,6 @@ def _unary_request(rpc_event, state, request_deserializer):
                         return request
 
     return unary_request
-
-
-def _get_default_initial_metadata_operation(state):
-    with state.condition:
-        if state.initial_metadata_allowed:
-            initial_metadata = (_compression.compression_algorithm_to_metadata(
-                state.compression_algorithm),
-                               ) if state.compression_algorithm else None
-            return cygrpc.SendInitialMetadataOperation(initial_metadata,
-                                                       _EMPTY_FLAGS)
 
 
 def _call_behavior(rpc_event,
