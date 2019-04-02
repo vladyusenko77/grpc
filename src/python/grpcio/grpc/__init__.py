@@ -1849,7 +1849,6 @@ class Compression(object):
     Gzip = _compression.Gzip
 
 
-
 ###################################  __all__  #################################
 
 __all__ = (
