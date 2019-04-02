@@ -357,11 +357,13 @@ def _get_compression_test_name(client_streaming, server_streaming,
         server_compression_str, server_call_compression_str)
 
 
-def _test_options(remaining_options=_TEST_OPTIONS, options={}):
-    if len(remaining_options) == 0:
+def _test_options(remaining_options=None, options=None):
+    remaining_options = remaining_options if remaining_options is not None else _TEST_OPTIONS
+    options = options if options is not None else {}
+    if not remaining_options:
         yield options
     else:
-        key = next(iter(remaining_options.keys()))
+        key = next(iter(remaining_options.keys()), None)
         new_remaining = dict(remaining_options)
         del new_remaining[key]
         values = remaining_options[key]
