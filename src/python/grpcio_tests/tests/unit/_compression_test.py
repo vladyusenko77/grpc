@@ -52,15 +52,15 @@ _COMPRESSION_RATIO_THRESHOLD = 0.1
 _COMPRESSION_METHODS = (
     None,
     # Disabled for test tractability.
-    # grpc.compression.NoCompression,
-    grpc.compression.Deflate,
-    grpc.compression.Gzip,
+    # grpc.Compression.NoCompression,
+    grpc.Compression.Deflate,
+    grpc.Compression.Gzip,
 )
 _COMPRESSION_NAMES = {
     None: 'Uncompressed',
-    grpc.compression.NoCompression: 'NoCompression',
-    grpc.compression.Deflate: 'DeflateCompression',
-    grpc.compression.Gzip: 'GzipCompression',
+    grpc.Compression.NoCompression: 'NoCompression',
+    grpc.Compression.Deflate: 'DeflateCompression',
+    grpc.Compression.Gzip: 'GzipCompression',
 }
 
 _TEST_OPTIONS = {
@@ -301,7 +301,7 @@ class CompressionTest(unittest.TestCase):
             'compression': server_compression,
         } if server_compression else {}
         server_handler = _GenericHandler(
-            functools.partial(set_call_compression, grpc.compression.Gzip)
+            functools.partial(set_call_compression, grpc.Compression.Gzip)
         ) if server_call_compression else _GenericHandler(None)
         sent_ratio, received_ratio = _get_compression_ratios(
             client_function, {}, {}, {}, _GenericHandler(None), channel_kwargs,
@@ -319,7 +319,7 @@ class CompressionTest(unittest.TestCase):
 
     def testDisableNextCompressionStreaming(self):
         server_kwargs = {
-            'compression': grpc.compression.Deflate,
+            'compression': grpc.Compression.Deflate,
         }
         _, received_ratio = _get_compression_ratios(
             _stream_stream_client, {}, {}, {}, _GenericHandler(None), {}, {},
@@ -328,7 +328,7 @@ class CompressionTest(unittest.TestCase):
 
     def testDisableNextCompressionStreamingResets(self):
         server_kwargs = {
-            'compression': grpc.compression.Deflate,
+            'compression': grpc.Compression.Deflate,
         }
         _, received_ratio = _get_compression_ratios(
             _stream_stream_client, {}, {}, {}, _GenericHandler(None), {}, {},

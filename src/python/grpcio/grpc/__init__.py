@@ -21,6 +21,7 @@ import sys
 import six
 
 from grpc._cython import cygrpc as _cygrpc
+from grpc import compression
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -1842,6 +1843,13 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
     context._finalize_state()  # pylint: disable=protected-access
 
 
+class Compression(object):
+    NoCompression = compression.NoCompression
+    Deflate = compression.Deflate
+    Gzip = compression.Gzip
+
+
+
 ###################################  __all__  #################################
 
 __all__ = (
@@ -1859,6 +1867,7 @@ __all__ = (
     'AuthMetadataContext',
     'AuthMetadataPluginCallback',
     'AuthMetadataPlugin',
+    'Compression',
     'ClientCallDetails',
     'ServerCertificateConfiguration',
     'ServerCredentials',

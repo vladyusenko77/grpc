@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import grpc
 from grpc._cython import cygrpc
 
 NoCompression = cygrpc.CompressionAlgorithm.none
