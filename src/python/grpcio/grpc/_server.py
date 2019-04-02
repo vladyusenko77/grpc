@@ -137,7 +137,7 @@ def _abort(state, call, code, details):
         effective_details = details if state.details is None else state.details
         if state.initial_metadata_allowed:
             operations = (
-                cygrpc.SendInitialMetadataOperation(None, _EMPTY_FLAGS),
+                _get_default_initial_metadata_operation(state),
                 cygrpc.SendStatusFromServerOperation(
                     state.trailing_metadata, effective_code, effective_details,
                     _EMPTY_FLAGS),
@@ -398,7 +398,7 @@ def _unary_request(rpc_event, state, request_deserializer):
     return unary_request
 
 
-def _get_default_initial_metadata_operation(state, rpc_event):
+def _get_default_initial_metadata_operation(state):
     with state.condition:
         if state.initial_metadata_allowed:
             initial_metadata = (_compression.compression_algorithm_to_metadata(
@@ -482,7 +482,7 @@ def _send_response(rpc_event, state, serialized_response):
         else:
             if state.initial_metadata_allowed:
                 operations = (
-                    _get_default_initial_metadata_operation(state, rpc_event),
+                    _get_default_initial_metadata_operation(state),
                     cygrpc.SendMessageOperation(
                         serialized_response,
                         _state_to_send_message_op_flags(state)),
@@ -514,7 +514,7 @@ def _status(rpc_event, state, serialized_response):
             ]
             if state.initial_metadata_allowed:
                 operations.append(
-                    _get_default_initial_metadata_operation(state, rpc_event))
+                    _get_default_initial_metadata_operation(state))
             if serialized_response is not None:
                 operations.append(
                     cygrpc.SendMessageOperation(
@@ -672,13 +672,13 @@ def _find_method_handler(rpc_event, generic_handlers, interceptor_pipeline):
 
 
 def _reject_rpc(rpc_event, status, details):
+    rpc_state = _RPCState()
     operations = (
-        cygrpc.SendInitialMetadataOperation(None, _EMPTY_FLAGS),
+        _get_default_initial_metadata_operation(rpc_state),
         cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
         cygrpc.SendStatusFromServerOperation(None, status, details,
                                              _EMPTY_FLAGS),
     )
-    rpc_state = _RPCState()
     rpc_event.call.start_server_batch(operations,
                                       lambda ignored_event: (rpc_state, (),))
     return rpc_state
