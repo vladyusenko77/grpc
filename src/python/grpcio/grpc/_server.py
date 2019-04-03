@@ -476,11 +476,16 @@ def _serialize_response(rpc_event, state, response, response_serializer):
         return serialized_response
 
 
-def _state_to_send_message_op_flags(state):
+def _get_send_message_op_flags_from_state(state):
     if state.disable_next_compression:
         return cygrpc.WriteFlag.no_compress
     else:
         return _EMPTY_FLAGS
+
+
+def _reset_per_message_state(state):
+    with state.condition:
+        state.disable_next_compression = False
 
 
 def _send_response(rpc_event, state, serialized_response):
@@ -493,18 +498,19 @@ def _send_response(rpc_event, state, serialized_response):
                     _get_initial_metadata_operation(state, None),
                     cygrpc.SendMessageOperation(
                         serialized_response,
-                        _state_to_send_message_op_flags(state)),
+                        _get_send_message_op_flags_from_state(state)),
                 )
                 state.initial_metadata_allowed = False
                 token = _SEND_INITIAL_METADATA_AND_SEND_MESSAGE_TOKEN
             else:
                 operations = (cygrpc.SendMessageOperation(
                     serialized_response,
-                    _state_to_send_message_op_flags(state)),)
+                    _get_send_message_op_flags_from_state(state)),)
                 token = _SEND_MESSAGE_TOKEN
             rpc_event.call.start_server_batch(operations,
                                               _send_message(state, token))
             state.due.add(token)
+            _reset_per_message_state(state)
             while True:
                 state.condition.wait()
                 if token not in state.due:
@@ -526,11 +532,12 @@ def _status(rpc_event, state, serialized_response):
                 operations.append(
                     cygrpc.SendMessageOperation(
                         serialized_response,
-                        _state_to_send_message_op_flags(state)))
+                        _get_send_message_op_flags_from_state(state)))
             rpc_event.call.start_server_batch(
                 operations,
                 _send_status_from_server(state, _SEND_STATUS_FROM_SERVER_TOKEN))
             state.statused = True
+            _reset_per_message_state(state)
             state.due.add(_SEND_STATUS_FROM_SERVER_TOKEN)
 
 
@@ -551,11 +558,6 @@ def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
         cygrpc.uninstall_context()
 
 
-def _reset_per_message_state(state):
-    with state.condition:
-        state.disable_next_compression = False
-
-
 def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                              request_deserializer, response_serializer):
     cygrpc.install_context_from_request_call_event(rpc_event)
@@ -568,7 +570,6 @@ def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                 rpc_event, state, response, response_serializer)
             if serialized_response is not None:
                 _send_response(rpc_event, state, serialized_response)
-            _reset_per_message_state(state)
 
     try:
         argument = argument_thunk()
@@ -605,7 +606,6 @@ def _send_message_callback_to_blocking_iterator_adapter(
             send_response_callback(response)
             if not _is_rpc_state_active(state):
                 break
-            _reset_per_message_state(state)
         else:
             break
 
