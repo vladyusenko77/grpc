@@ -551,6 +551,11 @@ def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
         cygrpc.uninstall_context()
 
 
+def _reset_per_message_state(state):
+    with state.condition:
+        state.disable_next_compression = False
+
+
 def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                              request_deserializer, response_serializer):
     cygrpc.install_context_from_request_call_event(rpc_event)
@@ -563,6 +568,7 @@ def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                 rpc_event, state, response, response_serializer)
             if serialized_response is not None:
                 _send_response(rpc_event, state, serialized_response)
+            _reset_per_message_state(state)
 
     try:
         argument = argument_thunk()
@@ -599,8 +605,7 @@ def _send_message_callback_to_blocking_iterator_adapter(
             send_response_callback(response)
             if not _is_rpc_state_active(state):
                 break
-            with state.condition:
-                state.disable_next_compression = False
+            _reset_per_message_state(state)
         else:
             break
 
