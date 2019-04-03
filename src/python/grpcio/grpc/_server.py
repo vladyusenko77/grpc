@@ -131,14 +131,24 @@ def _send_status_from_server(state, token):
     return send_status_from_server
 
 
-def _get_default_initial_metadata_operation(state):
+def _get_initial_metadata(state, metadata):
     with state.condition:
-        if state.initial_metadata_allowed:
-            initial_metadata = (_compression.compression_algorithm_to_metadata(
-                state.compression_algorithm),
-                               ) if state.compression_algorithm else None
-            return cygrpc.SendInitialMetadataOperation(initial_metadata,
-                                                       _EMPTY_FLAGS)
+        if state.compression_algorithm:
+            compression_metadata = (
+                _compression.compression_algorithm_to_metadata(
+                    state.compression_algorithm),)
+            if metadata is None:
+                return compression_metadata
+            else:
+                return compression_metadata + tuple(metadata)
+        else:
+            return metadata
+
+
+def _get_initial_metadata_operation(state, metadata):
+    operation = cygrpc.SendInitialMetadataOperation(
+        _get_initial_metadata(state, metadata), _EMPTY_FLAGS)
+    return operation
 
 
 def _abort(state, call, code, details):
@@ -147,7 +157,7 @@ def _abort(state, call, code, details):
         effective_details = details if state.details is None else state.details
         if state.initial_metadata_allowed:
             operations = (
-                _get_default_initial_metadata_operation(state),
+                _get_initial_metadata_operation(state, None),
                 cygrpc.SendStatusFromServerOperation(
                     state.trailing_metadata, effective_code, effective_details,
                     _EMPTY_FLAGS),
@@ -281,10 +291,8 @@ class _Context(grpc.ServicerContext):
                 _raise_rpc_error(self._state)
             else:
                 if self._state.initial_metadata_allowed:
-                    augmented_metadata = _compression.augment_metadata(
-                        initial_metadata, self._state.compression_algorithm)
-                    operation = cygrpc.SendInitialMetadataOperation(
-                        augmented_metadata, _EMPTY_FLAGS)
+                    operation = _get_initial_metadata_operation(
+                        self._state, initial_metadata)
                     self._rpc_event.call.start_server_batch(
                         (operation,), _send_initial_metadata(self._state))
                     self._state.initial_metadata_allowed = False
@@ -482,7 +490,7 @@ def _send_response(rpc_event, state, serialized_response):
         else:
             if state.initial_metadata_allowed:
                 operations = (
-                    _get_default_initial_metadata_operation(state),
+                    _get_initial_metadata_operation(state, None),
                     cygrpc.SendMessageOperation(
                         serialized_response,
                         _state_to_send_message_op_flags(state)),
@@ -513,8 +521,7 @@ def _status(rpc_event, state, serialized_response):
                     state.trailing_metadata, code, details, _EMPTY_FLAGS),
             ]
             if state.initial_metadata_allowed:
-                operations.append(
-                    _get_default_initial_metadata_operation(state))
+                operations.append(_get_initial_metadata_operation(state, None))
             if serialized_response is not None:
                 operations.append(
                     cygrpc.SendMessageOperation(
@@ -674,7 +681,7 @@ def _find_method_handler(rpc_event, generic_handlers, interceptor_pipeline):
 def _reject_rpc(rpc_event, status, details):
     rpc_state = _RPCState()
     operations = (
-        _get_default_initial_metadata_operation(rpc_state),
+        _get_initial_metadata_operation(rpc_state, None),
         cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
         cygrpc.SendStatusFromServerOperation(None, status, details,
                                              _EMPTY_FLAGS),
