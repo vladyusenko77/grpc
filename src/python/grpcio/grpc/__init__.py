@@ -415,7 +415,7 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
       wait_for_ready: This is an EXPERIMENTAL argument. An optional flag t
         enable wait for ready mechanism.
       compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip.
+        grpc.compression.Gzip. This is an experimental option.
     """
 
 
@@ -686,7 +686,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+            grpc.compression.Gzip. This is an experimental option.
 
         Returns:
           The response value for the RPC.
@@ -718,7 +718,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+            grpc.compression.Gzip. This is an experimental option.
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -750,7 +750,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+            grpc.compression.Gzip. This is an experimental option.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -785,7 +785,7 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+            grpc.compression.Gzip. This is an experimental option.
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -820,7 +820,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+            grpc.compression.Gzip. This is an experimental option.
 
         Returns:
           The response value for the RPC.
@@ -853,7 +853,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+            grpc.compression.Gzip. This is an experimental option.
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -885,7 +885,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+            grpc.compression.Gzip. This is an experimental option.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -920,7 +920,7 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+            grpc.compression.Gzip. This is an experimental option.
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -1124,9 +1124,10 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         """
         raise NotImplementedError()
 
-    @abc.abstractmethod
     def set_compression(self, compression):
         """Set the compression algorithm to be used for the entire call.
+
+        This is an experimental method.
 
         Args:
           compression: An element of grpc.compression, e.g.
@@ -1221,9 +1222,10 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         """
         raise NotImplementedError()
 
-    @abc.abstractmethod
     def disable_next_message_compression(self):
         """Disables compression for the next response message.
+
+        This is an experimental method.
 
         This method will override any compression configuration set during
         server creation or set on the call.
@@ -1738,7 +1740,7 @@ def insecure_channel(target, options=None, compression=None):
       options: An optional list of key-value pairs (channel args
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel.
+        used over the lifetime of the channel. This is an experimental option.
 
     Returns:
       A Channel.
@@ -1759,7 +1761,7 @@ def secure_channel(target, credentials, options=None, compression=None):
       options: An optional list of key-value pairs (channel args
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
-        used over the lifetime of the channel.
+        used over the lifetime of the channel. This is an experimental option.
 
     Returns:
       A Channel.
@@ -1822,7 +1824,7 @@ def server(thread_pool,
         indicate no limit.
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This compression algorithm will be used for the
-        lifetime of the server unless overridden.
+        lifetime of the server unless overridden. This is an experimental option.
 
     Returns:
       A Server object.
@@ -1844,7 +1846,10 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
 
 
 class Compression(enum.IntEnum):
-    """Indicates the compression method to be used for an RPC."""
+    """Indicates the compression method to be used for an RPC.
+
+       This enumeration is part of an experimental API.
+    """
     NoCompression = _compression.NoCompression
     Deflate = _compression.Deflate
     Gzip = _compression.Gzip
